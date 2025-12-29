@@ -4,7 +4,7 @@
 ## Traverses the computation graph in reverse to compute gradients.
 
 import std/[tables, algorithm, hashes, options]
-import nimml_core
+import ml_core
 import ./tape
 
 type

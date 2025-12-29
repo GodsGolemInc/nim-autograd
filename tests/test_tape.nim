@@ -2,8 +2,8 @@
 
 import unittest
 import std/[options, strutils]
-import nimml_core
-import ../src/nimml_autograd/tape
+import ml_core
+import ../src/ml_autograd/tape
 
 # Helper to create TensorRef with unique hash
 var tensorCounter {.global.} = 0

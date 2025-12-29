@@ -2,10 +2,10 @@
 
 import unittest
 import std/[tables]
-import nimml_core
-import ../src/nimml_autograd/tape
-import ../src/nimml_autograd/backward
-import ../src/nimml_autograd/gradients
+import ml_core
+import ../src/ml_autograd/tape
+import ../src/ml_autograd/backward
+import ../src/ml_autograd/gradients
 
 # Helper to create TensorRef with unique hash
 var tensorCounter {.global.} = 0

@@ -4,7 +4,7 @@
 ## These are registered with the global gradient registry.
 
 import std/[tables]
-import nimml_core
+import ml_core
 import ./tape
 import ./backward
 

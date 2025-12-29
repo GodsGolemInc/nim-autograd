@@ -4,7 +4,7 @@
 ## Records operations for backward pass gradient computation.
 
 import std/[tables, options, hashes]
-import nimml_core
+import ml_core
 
 type
   GradFn* = proc(grad: TensorRef, inputs: seq[TensorRef],

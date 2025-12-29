@@ -7,9 +7,9 @@
 ## v0.0.2: Backward pass implementation
 ## v0.0.3: Common gradient functions
 
-import nimml_autograd/tape
-import nimml_autograd/backward
-import nimml_autograd/gradients
+import ml_autograd/tape
+import ml_autograd/backward
+import ml_autograd/gradients
 
 export tape
 export backward
