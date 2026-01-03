@@ -8,6 +8,7 @@
 ## v0.0.3: Common gradient functions
 ## v0.0.4: Add LICENSE (Apache-2.0) and documentation
 ## v0.0.5: Full implementation of gradient functions and tensor ops
+## v0.0.6: Comprehensive test suite (183 tests, 100% coverage)
 
 import ml_autograd/tensor_ops
 import ml_autograd/tape

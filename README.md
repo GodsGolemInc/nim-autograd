@@ -75,18 +75,30 @@ let gradX = ctx.getGrad(x)
 
 | Module | Description |
 |--------|-------------|
+| `tensor_ops` | Tensor arithmetic operations for gradients |
 | `tape` | Gradient tape for recording operations |
 | `backward` | Backward pass implementation |
 | `gradients` | Gradient function implementations |
 
 ## Test Coverage
 
-| Module | Tests | Status |
-|--------|-------|--------|
-| tape | 34 | Pass |
-| backward | 19 | Pass |
-| gradients | 25 | Pass |
-| **Total** | **78** | **100%** |
+| Test Type | File | Tests | Status |
+|-----------|------|-------|--------|
+| Unit | test_tape.nim | 34 | Pass |
+| Unit | test_backward.nim | 19 | Pass |
+| Unit | test_gradients.nim | 25 | Pass |
+| Unit | test_tensor_ops.nim | 70 | Pass |
+| Integration | test_integration.nim | 21 | Pass |
+| Use Case | test_usecases.nim | 14 | Pass |
+| **Total** | | **183** | **100%** |
+
+### Test Categories
+
+- **Unit Tests (148)**: Individual function testing
+- **Integration Tests (21)**: Component interaction testing
+- **Use Case Tests (14)**: Real-world ML scenarios
+
+See [docs/testing.md](docs/testing.md) for detailed test documentation.
 
 ## Running Tests
 
@@ -99,12 +111,16 @@ Or run individual test files:
 nim c -r --path:../nim-ml-core/src tests/test_tape.nim
 nim c -r --path:../nim-ml-core/src tests/test_backward.nim
 nim c -r --path:../nim-ml-core/src tests/test_gradients.nim
+nim c -r --path:../nim-ml-core/src tests/test_tensor_ops.nim
+nim c -r --path:../nim-ml-core/src tests/test_integration.nim
+nim c -r --path:../nim-ml-core/src tests/test_usecases.nim
 ```
 
 ## Architecture
 
 ```
 ml_autograd
+├── tensor_ops.nim # TensorData/TensorRef arithmetic operations
 ├── tape.nim       # GradientTape, TapeEntry, watch/record
 ├── backward.nim   # backward(), computeGradients(), chain rules
 └── gradients.nim  # Gradient functions for all operations
