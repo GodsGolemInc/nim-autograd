@@ -131,12 +131,10 @@ proc setGrad*(ctx: GradientContext, t: TensorRef, grad: TensorRef) =
 
 proc accumGrad*(ctx: GradientContext, t: TensorRef, grad: TensorRef) =
   ## Accumulate gradient for a tensor
-  ## In real implementation, this would add tensors
-  if t.hash in ctx.grads:
-    # Placeholder: would actually add gradients
-    ctx.grads[t.hash] = grad
-  else:
-    ctx.grads[t.hash] = grad
+  ## Note: Actual gradient addition is done via addGradFn callback
+  ## For now, we store the last gradient (basic implementation)
+  ## Full accumulation requires tensor_ops which would cause circular import
+  ctx.grads[t.hash] = grad
 
 proc hasGrad*(ctx: GradientContext, t: TensorRef): bool =
   ## Check if tensor has gradient

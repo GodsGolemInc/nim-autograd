@@ -1,7 +1,7 @@
 ## Tests for backward pass module
 
 import unittest
-import std/[tables, strutils]
+import std/[tables]
 import ml_core
 import ../src/ml_autograd/tape
 import ../src/ml_autograd/backward

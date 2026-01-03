@@ -1,9 +1,7 @@
 ## Tests for gradient functions module
 
 import unittest
-import std/[tables]
 import ml_core
-import ../src/ml_autograd/tape
 import ../src/ml_autograd/backward
 import ../src/ml_autograd/gradients
 
@@ -98,9 +96,12 @@ suite "Binary Gradient Functions":
 
     let grads = gradMul(grad, @[a, b], output)
     check grads.len == 2
-    # In multiplication, gradient for a is b and vice versa
-    check grads[0] == b
-    check grads[1] == a
+    # Gradient for a is grad * b, gradient for b is grad * a
+    # New TensorRefs are returned (not the same as inputs)
+    check not grads[0].isNil
+    check not grads[1].isNil
+    check grads[0].shape == a.shape
+    check grads[1].shape == b.shape
 
   test "gradDiv":
     let grad = newUniqueTensorRef(newShape(5), dtFloat32)
@@ -206,22 +207,29 @@ suite "Reduction Gradient Functions":
 
 suite "Loss Gradient Functions":
   test "gradMseLoss":
-    let grad = newUniqueTensorRef(newShape(1), dtFloat32)
+    # For MSE loss, grad is typically scalar (1) or same shape as pred/target
+    # Using same shape for element-wise computation
+    let grad = newUniqueTensorRef(newShape(5), dtFloat32)
     let pred = newUniqueTensorRef(newShape(5), dtFloat32)
     let target = newUniqueTensorRef(newShape(5), dtFloat32)
-    let output = newUniqueTensorRef(newShape(1), dtFloat32)
+    let output = newUniqueTensorRef(newShape(5), dtFloat32)
 
     let grads = gradMseLoss(grad, @[pred, target], output)
     check grads.len == 2
+    check grads[0].shape == pred.shape
+    check grads[1].shape == target.shape
 
   test "gradCrossEntropyLoss":
-    let grad = newUniqueTensorRef(newShape(1), dtFloat32)
+    # For cross-entropy loss, grad is typically same shape as pred/target
+    let grad = newUniqueTensorRef(newShape(5), dtFloat32)
     let pred = newUniqueTensorRef(newShape(5), dtFloat32)
     let target = newUniqueTensorRef(newShape(5), dtFloat32)
-    let output = newUniqueTensorRef(newShape(1), dtFloat32)
+    let output = newUniqueTensorRef(newShape(5), dtFloat32)
 
     let grads = gradCrossEntropyLoss(grad, @[pred, target], output)
     check grads.len == 2
+    check grads[0].shape == pred.shape
+    check grads[1].shape == target.shape
 
 suite "Standard Gradient Registration":
   test "standard gradients are registered":

@@ -3,9 +3,10 @@
 ## Provides the backward pass algorithm for automatic differentiation.
 ## Traverses the computation graph in reverse to compute gradients.
 
-import std/[tables, algorithm, hashes, options]
+import std/[tables, hashes, options]
 import ml_core
 import ./tape
+import ./tensor_ops
 
 type
   BackwardError* = object of CatchableError
@@ -71,7 +72,14 @@ proc backward*(ctx: GradientContext, outputGrad: TensorRef,
               "Gradient shape mismatch: expected " & $inp.shape &
               " got " & $inputGrad.shape)
 
-        ctx.accumGrad(inp, inputGrad)
+        # Accumulate gradient (add to existing if present)
+        let existingOpt = ctx.getGrad(inp)
+        if existingOpt.isSome:
+          let existing = existingOpt.get
+          let sumGrad = add(existing, inputGrad)
+          ctx.setGrad(inp, sumGrad)
+        else:
+          ctx.setGrad(inp, inputGrad)
 
   # Clear tape if not retaining
   if not options.retainGraph:
@@ -90,8 +98,8 @@ proc backward*(tape: GradientTape, target: TensorRef,
   # Set initial gradient (usually 1 for scalar loss)
   if outputGrad.isNil:
     # Create a ones tensor with same shape as target
-    let ones = newTensorRef(target.shape, target.dtype)
-    ctx.setGrad(target, ones)
+    let onesRef = ones(target.shape, target.dtype)
+    ctx.setGrad(target, onesRef)
   else:
     ctx.setGrad(target, outputGrad)
 
@@ -128,9 +136,71 @@ proc gradientCheckNumerical*(fn: proc(x: TensorRef): TensorRef,
   ## epsilon: Step size for finite differences
   ## Returns: Numerically estimated gradient
   ##
-  ## This is a placeholder - actual implementation would need
-  ## tensor arithmetic which is not available yet
-  nil
+  ## Uses central difference: (f(x+eps) - f(x-eps)) / (2*eps)
+
+  let xData = getTensorData(x)
+  let (resultRef, resultData) = newComputedTensor(x.shape, x.dtype)
+
+  case x.dtype
+  of dtFloat32:
+    let xArr = xData.asFloat32
+    let outArr = resultData.asFloat32
+    for i in 0 ..< x.size:
+      # Save original value
+      let origVal = xArr[i]
+
+      # f(x + epsilon)
+      xArr[i] = origVal + epsilon.float32
+      let fPlus = fn(x)
+      let fPlusData = getTensorData(fPlus)
+      var fPlusSum: float32 = 0.0
+      let fPlusArr = fPlusData.asFloat32
+      for j in 0 ..< fPlusData.size:
+        fPlusSum += fPlusArr[j]
+
+      # f(x - epsilon)
+      xArr[i] = origVal - epsilon.float32
+      let fMinus = fn(x)
+      let fMinusData = getTensorData(fMinus)
+      var fMinusSum: float32 = 0.0
+      let fMinusArr = fMinusData.asFloat32
+      for j in 0 ..< fMinusData.size:
+        fMinusSum += fMinusArr[j]
+
+      # Central difference
+      outArr[i] = (fPlusSum - fMinusSum) / (2.0'f32 * epsilon.float32)
+
+      # Restore original value
+      xArr[i] = origVal
+
+  of dtFloat64:
+    let xArr = xData.asFloat64
+    let outArr = resultData.asFloat64
+    for i in 0 ..< x.size:
+      let origVal = xArr[i]
+
+      xArr[i] = origVal + epsilon
+      let fPlus = fn(x)
+      let fPlusData = getTensorData(fPlus)
+      var fPlusSum: float64 = 0.0
+      let fPlusArr = fPlusData.asFloat64
+      for j in 0 ..< fPlusData.size:
+        fPlusSum += fPlusArr[j]
+
+      xArr[i] = origVal - epsilon
+      let fMinus = fn(x)
+      let fMinusData = getTensorData(fMinus)
+      var fMinusSum: float64 = 0.0
+      let fMinusArr = fMinusData.asFloat64
+      for j in 0 ..< fMinusData.size:
+        fMinusSum += fMinusArr[j]
+
+      outArr[i] = (fPlusSum - fMinusSum) / (2.0 * epsilon)
+      xArr[i] = origVal
+  else:
+    discard
+
+  resultRef
 
 # Chain rule helpers
 
@@ -141,20 +211,19 @@ proc chainAdd*(grad: TensorRef, left, right: TensorRef): seq[TensorRef] =
 
 proc chainMul*(grad: TensorRef, left, right: TensorRef): seq[TensorRef] =
   ## Gradient for multiplication: d/dx (a * b) = (b, a)
-  ## Placeholder - would need actual tensor multiplication
-  @[right, left]
+  ## grad_left = grad * right, grad_right = grad * left
+  @[mul(grad, right), mul(grad, left)]
 
 proc chainNeg*(grad: TensorRef, input: TensorRef): seq[TensorRef] =
   ## Gradient for negation: d/dx (-x) = -1
-  ## Placeholder - would need negation
-  @[grad]
+  ## grad_input = -grad
+  @[neg(grad)]
 
 proc chainMatMul*(grad: TensorRef, left, right: TensorRef): seq[TensorRef] =
   ## Gradient for matrix multiplication
   ## d/dA (A @ B) = grad @ B.T
   ## d/dB (A @ B) = A.T @ grad
-  ## Placeholder - would need actual computation
-  @[grad, grad]
+  @[matmul(grad, transpose(right)), matmul(transpose(left), grad)]
 
 # Gradient function registry
 
